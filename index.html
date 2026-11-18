@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#122b27">
+  <meta name="description" content="Seis cifras, cuatro intentos y un pato demasiado apegado a su dinero. Abre su caja fuerte.">
+  <title>El código del ricachón · Un juego de mucha pasta</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #102521;
+      --panel: #18352e;
+      --cream: #fff7de;
+      --muted: #b1c6b7;
+      --gold: #f9cc5b;
+      --line: #ffffff20;
+      --green: #a6e3ac;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100svh;
+      color: var(--cream);
+      background: radial-gradient(ellipse at 50% 15%, #315440 0, var(--bg) 65%);
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+    button { font: inherit; touch-action: manipulation; }
+    button:focus-visible, summary:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
+    button { -webkit-tap-highlight-color: transparent; }
+    .background { position: fixed; inset: 0; overflow: hidden; pointer-events: none; opacity: .13; }
+    .banknote {
+      position: absolute; width: 120px; padding: 10px; border: 2px solid #a6e3ac;
+      color: #a6e3ac; text-align: center; font: bold 32px Georgia, serif; transform: rotate(-24deg);
+    }
+    .banknote:nth-child(1) { top: 12%; left: -35px; }
+    .banknote:nth-child(2) { top: 40%; right: -42px; transform: rotate(28deg); }
+    .banknote:nth-child(3) { bottom: 8%; left: 7%; transform: rotate(18deg); }
+    .banknote:nth-child(4) { top: 4%; right: 12%; transform: rotate(-15deg); }
+    main { position: relative; width: min(100% - 32px, 480px); margin: 0 auto; padding: 27px 0 24px; }
+    .brand { display: flex; justify-content: center; align-items: center; gap: 8px; color: var(--gold); font-size: 10px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; }
+    .brand::before, .brand::after { content: ""; height: 1px; width: 26px; background: #f9cc5b66; }
+    .hero { text-align: center; }
+    .art { display: block; width: 260px; max-width: 90%; height: auto; margin: 10px auto -6px; overflow: visible; }
+    h1 { margin: 0; font: 800 clamp(34px, 8.5vw, 46px)/1.03 Georgia, serif; letter-spacing: -1.5px; }
+    h1 span { color: var(--gold); }
+    .intro { max-width: 340px; margin: 13px auto 23px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .intro strong { color: var(--cream); font-weight: 600; }
+    .game { padding: 22px; background: linear-gradient(150deg, #224337, var(--panel)); border: 1px solid #92b69b33; border-radius: 24px; box-shadow: 0 18px 55px #0003; }
+    .game-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); }
+    .attempts { display: flex; gap: 5px; }
+    .attempt { width: 9px; height: 9px; border-radius: 50%; background: var(--gold); transition: background .2s; }
+    .attempt.used { background: #ffffff1a; }
+    .amount { display: flex; align-items: center; justify-content: center; gap: 5px; margin: 22px 0 12px; }
+    .slot {
+      display: grid; place-items: center; padding: 0; width: 43px; height: 57px; flex: 1 1 0; min-width: 0;
+      color: var(--cream); background: #0c241e; border: 1px solid #ffffff24; border-radius: 9px;
+      font-size: clamp(24px, 7vw, 32px); font-weight: 750; font-variant-numeric: tabular-nums; cursor: pointer;
+    }
+    .slot.empty { color: #607e6d; }
+    .slot.next { border-color: var(--gold); box-shadow: 0 0 0 2px #f9cc5b16; }
+    .slot:disabled { opacity: 1; cursor: default; }
+    .separator, .currency { font-size: 26px; font-weight: 700; color: var(--gold); }
+    .currency { margin-left: 2px; font-size: 23px; }
+    .hint { margin: 0; color: var(--muted); font-size: 11px; text-align: center; line-height: 1.5; }
+    .digits { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 21px; }
+    .digit {
+      min-height: 49px; padding: 0; border: 1px solid #f9cc5b88; border-radius: 10px;
+      background: #f9cc5b; color: #253127; box-shadow: 0 3px 0 #ac832e; font-size: 23px; font-weight: 800; cursor: pointer;
+      transition: transform .12s, opacity .12s;
+    }
+    .digit:not(:disabled):hover { background: #ffdd80; transform: translateY(-2px); }
+    .digit:disabled { opacity: .2; cursor: default; box-shadow: none; }
+    .tools { display: flex; justify-content: center; gap: 22px; margin: 11px 0 14px; }
+    .text-button { border: 0; background: transparent; color: var(--muted); min-height: 36px; padding: 5px 8px; font-size: 12px; cursor: pointer; }
+    .text-button:not(:disabled):hover { color: var(--cream); }
+    .text-button:disabled { opacity: .35; cursor: default; }
+    .submit {
+      width: 100%; min-height: 51px; padding: 12px; border: 0; border-radius: 12px; background: var(--cream);
+      color: #15362a; font-size: 14px; font-weight: 800; cursor: pointer;
+    }
+    .submit:not(:disabled):hover { background: var(--gold); }
+    .submit:disabled { background: #ffffff13; color: #a0b3a5; cursor: default; }
+    .status { margin: 15px 0 0; min-height: 39px; color: var(--muted); font-size: 12px; line-height: 1.6; text-align: center; }
+    .status.success { color: var(--green); }
+    .status.failure { color: #ffc0a6; }
+    .history { list-style: none; margin: 0; padding: 0; }
+    .history li { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 13px 0; border-top: 1px solid var(--line); font-size: 12px; }
+    .history-number { color: var(--muted); font-size: 10px; margin-right: 7px; }
+    .guess { color: var(--cream); font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+    .score { color: var(--gold); font-size: 11px; }
+    .restart { width: 100%; margin-top: 10px; color: var(--gold); }
+    [hidden] { display: none !important; }
+    details { margin: 21px 8px 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    summary { cursor: pointer; text-align: center; min-height: 35px; color: var(--cream); }
+    details ol { padding-left: 19px; }
+    footer { margin-top: 19px; text-align: center; color: #92ae9c; font-size: 10px; letter-spacing: .5px; }
+    .confetti { position: fixed; z-index: 3; top: -25px; width: 10px; height: 17px; pointer-events: none; animation: fall 2.8s ease-in forwards; }
+    @keyframes fall { to { transform: translateY(110vh) rotate(680deg); } }
+    @media (max-width: 370px) {
+      main { width: calc(100% - 24px); padding-top: 20px; }
+      .game { padding: 17px; }
+      .amount { gap: 4px; }
+      .slot { height: 51px; }
+      .digits { gap: 6px; }
+      .art { width: 225px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .confetti { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="background" aria-hidden="true">
+    <span class="banknote">€ € €</span><span class="banknote">€ € €</span>
+    <span class="banknote">€ € €</span><span class="banknote">€ € €</span>
+  </div>
+  <main>
+    <div class="brand">El club de la pasta</div>
+    <header class="hero">
+      <svg class="art" viewBox="0 0 300 188" aria-hidden="true" focusable="false">
+        <ellipse cx="153" cy="174" rx="120" ry="10" fill="#081c17" opacity=".4"/>
+        <g fill="#eab948" stroke="#986e24" stroke-width="2">
+          <rect x="25" y="156" width="60" height="10" rx="5"/><rect x="29" y="146" width="60" height="10" rx="5"/>
+          <rect x="23" y="136" width="60" height="10" rx="5"/><rect x="216" y="159" width="61" height="10" rx="5"/>
+          <rect x="220" y="149" width="54" height="10" rx="5"/><rect x="225" y="139" width="49" height="10" rx="5"/>
+        </g>
+        <path d="M75 174 Q73 129 114 120 L180 119 Q218 131 223 174" fill="#a2a3ed" stroke="#112c26" stroke-width="4"/>
+        <path d="M123 122 L148 150 L175 121 L168 174 L132 174Z" fill="#fff3d4"/>
+        <path d="M147 145 L135 136 L135 156 L147 151 L160 157 L160 136Z" fill="#ed936d" stroke="#112c26" stroke-width="3"/>
+        <path d="M91 96 Q79 48 110 35 Q102 19 119 23 Q123 8 136 25 Q168 10 189 37 Q214 61 197 102 L179 125 Q145 145 113 122Z" fill="#fff8e6" stroke="#112c26" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M105 34 Q122 43 139 33" fill="none" stroke="#dfd7bf" stroke-width="3" stroke-linecap="round"/>
+        <path d="M97 61 L141 65 L137 88 Q111 103 101 83Z M148 65 L193 59 L188 82 Q173 98 151 86Z" fill="#163a30" stroke="#112c26" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M139 70 Q144 66 151 70" fill="none" stroke="#112c26" stroke-width="4"/>
+        <path d="M109 67 L122 70 M160 69 L172 65" stroke="#ffffff70" stroke-width="3" stroke-linecap="round"/>
+        <path d="M125 94 Q149 82 169 94 L191 99 Q196 109 174 114 Q147 132 122 111 Q108 102 125 94Z" fill="#f3b84e" stroke="#112c26" stroke-width="4"/>
+        <path d="M127 106 Q150 113 176 104" fill="none" stroke="#9e6128" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M187 145 Q202 118 218 137 L225 157 Q222 175 206 170Z" fill="#fff8e6" stroke="#112c26" stroke-width="4"/>
+        <path d="M209 128 Q199 111 209 104 L230 103 Q241 116 232 129 Q264 162 236 175 L205 175 Q180 161 209 128Z" fill="#f1ca71" stroke="#112c26" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M208 128 L233 128" stroke="#9e6128" stroke-width="4"/>
+        <text x="209" y="161" fill="#78531d" font-size="29" font-family="Georgia, serif" font-weight="bold">€</text>
+        <g fill="#f9cc5b">
+          <path d="M58 67 L62 78 L73 82 L62 86 L58 97 L54 86 L43 82 L54 78Z"/>
+          <path d="M242 29 L245 37 L253 40 L245 43 L242 51 L239 43 L231 40 L239 37Z"/>
+          <circle cx="77" cy="43" r="3"/><circle cx="262" cy="89" r="3"/>
+        </g>
+        <g transform="translate(22 106) rotate(-17)">
+          <rect width="49" height="28" rx="3" fill="#8fbb83" stroke="#112c26" stroke-width="3"/>
+          <ellipse cx="24" cy="14" rx="9" ry="10" fill="#b9d69f"/>
+          <text x="18" y="20" font-size="17" font-weight="bold" fill="#416543">€</text>
+        </g>
+      </svg>
+      <h1>El código del<br><span>ricachón.</span></h1>
+      <p class="intro">Este pato no suelta ni un céntimo.<br>Adivina cuánto guarda y <strong>ábrele la caja fuerte.</strong></p>
+    </header>
+
+    <section class="game" aria-label="Juego de la caja fuerte">
+      <div class="game-top">
+        <span class="label" id="attempt-label">Intento 1 de 4</span>
+        <div class="attempts" id="attempts" aria-hidden="true">
+          <span class="attempt"></span><span class="attempt"></span><span class="attempt"></span><span class="attempt"></span>
+        </div>
+      </div>
+      <div class="amount" role="group" aria-label="Tu importe: cuatro cifras y dos decimales">
+        <button type="button" class="slot empty next" aria-label="Posición 1, vacía">·</button>
+        <button type="button" class="slot empty" aria-label="Posición 2, vacía">·</button>
+        <button type="button" class="slot empty" aria-label="Posición 3, vacía">·</button>
+        <button type="button" class="slot empty" aria-label="Posición 4, vacía">·</button>
+        <span class="separator" aria-hidden="true">,</span>
+        <button type="button" class="slot empty" aria-label="Posición 5, vacía">·</button>
+        <button type="button" class="slot empty" aria-label="Posición 6, vacía">·</button>
+        <span class="currency" aria-hidden="true">€</span>
+      </div>
+      <p class="hint">Toca los números en el orden que quieras. Sin repetir.</p>
+      <div class="digits" role="group" aria-label="Números disponibles">
+        <button type="button" class="digit" data-digit="1" aria-label="Añadir 1">1</button>
+        <button type="button" class="digit" data-digit="2" aria-label="Añadir 2">2</button>
+        <button type="button" class="digit" data-digit="3" aria-label="Añadir 3">3</button>
+        <button type="button" class="digit" data-digit="4" aria-label="Añadir 4">4</button>
+        <button type="button" class="digit" data-digit="5" aria-label="Añadir 5">5</button>
+        <button type="button" class="digit" data-digit="6" aria-label="Añadir 6">6</button>
+      </div>
+      <div class="tools">
+        <button type="button" class="text-button" id="clear" disabled>Limpiar</button>
+        <button type="button" class="text-button" id="backspace" disabled>← Borrar</button>
+      </div>
+      <button type="button" class="submit" id="submit" disabled>Probar combinación →</button>
+      <p class="status" id="status" role="status" aria-live="polite" aria-atomic="true">Seis cifras. Cuatro oportunidades. Mucha pasta en juego.</p>
+      <ol class="history" id="history" aria-label="Intentos anteriores"></ol>
+      <button type="button" class="text-button restart" id="restart" hidden>Volver a jugar ↻</button>
+    </section>
+
+    <details>
+      <summary>¿Cómo se juega?</summary>
+      <ol>
+        <li>Coloca los números 1, 2, 3, 4, 5 y 6, una sola vez cada uno.</li>
+        <li>Las primeras cuatro cifras son euros; las últimas dos, céntimos.</li>
+        <li>Tienes cuatro intentos. Después de cada uno, sabrás cuántas cifras están en su sitio. El orden de los dos céntimos es intercambiable.</li>
+        <li>Toca una casilla para quitar su cifra o usa «Borrar». También puedes usar el teclado y pulsar Intro para probar.</li>
+      </ol>
+    </details>
+    <footer>Hecho para jugar. No para hacerse rico.</footer>
+    <noscript><p>Activa JavaScript en tu navegador para jugar.</p></noscript>
+  </main>
+  <script>
+    "use strict";
+
+    const solutions = ["516234", "516243"];
+    const slots = [...document.querySelectorAll(".slot")];
+    const digitButtons = [...document.querySelectorAll(".digit")];
+    const attemptDots = [...document.querySelectorAll(".attempt")];
+    const attemptLabel = document.getElementById("attempt-label");
+    const clearButton = document.getElementById("clear");
+    const backspaceButton = document.getElementById("backspace");
+    const submitButton = document.getElementById("submit");
+    const restartButton = document.getElementById("restart");
+    const status = document.getElementById("status");
+    const history = document.getElementById("history");
+    const maxAttempts = 4;
+    let digits = Array(6).fill("");
+    let attempts = 0;
+    let finished = false;
+
+    function render() {
+      const next = digits.indexOf("");
+      slots.forEach((slot, index) => {
+        slot.textContent = digits[index] || "·";
+        slot.classList.toggle("empty", !digits[index]);
+        slot.classList.toggle("next", !finished && index === next);
+        slot.disabled = finished;
+        slot.setAttribute("aria-label", `Posición ${index + 1}, ${digits[index] ? digits[index] + ". Toca para quitar" : "vacía"}`);
+      });
+      digitButtons.forEach(button => {
+        button.disabled = finished || digits.includes(button.dataset.digit);
+      });
+      clearButton.disabled = finished || digits.every(digit => !digit);
+      backspaceButton.disabled = clearButton.disabled;
+      submitButton.disabled = finished || next !== -1;
+      attemptLabel.textContent = finished ? `Partida terminada · ${attempts}/${maxAttempts}` : `Intento ${attempts + 1} de ${maxAttempts}`;
+      attemptDots.forEach((dot, index) => dot.classList.toggle("used", index < attempts));
+      restartButton.hidden = !finished;
+    }
+
+    function addDigit(digit) {
+      if (finished || digits.includes(digit)) return;
+      const next = digits.indexOf("");
+      if (next === -1) return;
+      digits[next] = digit;
+      render();
+    }
+
+    function removeLast() {
+      if (finished) return;
+      const last = digits.findLastIndex(digit => digit !== "");
+      if (last !== -1) digits[last] = "";
+      render();
+    }
+
+    function formatAmount(value) {
+      return `${value[0]}.${value.slice(1, 4)},${value.slice(4)} €`;
+    }
+
+    function celebrate() {
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      for (let index = 0; index < 38; index++) {
+        const piece = document.createElement("span");
+        piece.className = "confetti";
+        piece.setAttribute("aria-hidden", "true");
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.background = ["#f9cc5b", "#a6e3ac", "#a2a3ed", "#fff7de"][index % 4];
+        piece.style.animationDelay = `${Math.random() * .5}s`;
+        document.body.append(piece);
+        piece.addEventListener("animationend", () => piece.remove(), { once: true });
+      }
+    }
+
+    function submitGuess() {
+      if (finished || digits.some(digit => !digit)) return;
+      const guess = digits.join("");
+      attempts++;
+      const won = solutions.includes(guess);
+      const correct = Math.max(...solutions.map(solution =>
+        [...guess].filter((digit, index) => digit === solution[index]).length
+      ));
+      const row = document.createElement("li");
+      const amount = document.createElement("span");
+      const number = document.createElement("span");
+      number.className = "history-number";
+      number.textContent = `#${attempts}`;
+      const value = document.createElement("span");
+      value.className = "guess";
+      value.textContent = formatAmount(guess);
+      amount.append(number, value);
+      const score = document.createElement("span");
+      score.className = "score";
+      score.textContent = won ? "¡Caja abierta!" : `${correct} de 6 en su sitio`;
+      row.append(amount, score);
+      history.prepend(row);
+
+      finished = won || attempts === maxAttempts;
+      if (won) {
+        status.className = "status success";
+        status.textContent = `¡Has abierto la caja! ${formatAmount(guess)} de puro botín. El pato pide una segunda opinión.`;
+        submitButton.textContent = "¡El botín es tuyo!";
+        celebrate();
+      } else if (finished) {
+        status.className = "status failure";
+        status.textContent = "¡El pato se queda la pasta! Eran 5.162,34 € (5.162,43 € también valía).";
+        submitButton.textContent = "La caja se ha bloqueado";
+      } else {
+        const left = maxAttempts - attempts;
+        status.textContent = `${correct} de 6 cifras en su sitio. ${left === 1 ? "¡Te queda un intento!" : `Te quedan ${left} intentos.`}`;
+        digits = Array(6).fill("");
+      }
+      render();
+      if (finished) restartButton.focus();
+      else digitButtons.find(button => !button.disabled).focus();
+    }
+
+    digitButtons.forEach(button => button.addEventListener("click", () => addDigit(button.dataset.digit)));
+    slots.forEach((slot, index) => slot.addEventListener("click", () => {
+      if (finished) return;
+      digits[index] = "";
+      render();
+    }));
+    clearButton.addEventListener("click", () => {
+      digits = Array(6).fill("");
+      render();
+    });
+    backspaceButton.addEventListener("click", removeLast);
+    submitButton.addEventListener("click", submitGuess);
+    restartButton.addEventListener("click", () => {
+      digits = Array(6).fill("");
+      attempts = 0;
+      finished = false;
+      history.replaceChildren();
+      document.querySelectorAll(".confetti").forEach(piece => piece.remove());
+      status.className = "status";
+      status.textContent = "Nueva ronda. El mismo pato, la misma pasta. ¡A por la caja!";
+      submitButton.textContent = "Probar combinación →";
+      render();
+      digitButtons[0].focus();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.ctrlKey || event.altKey || event.metaKey || event.repeat) return;
+      if (/^[1-6]$/.test(event.key)) {
+        event.preventDefault();
+        addDigit(event.key);
+      } else if (event.key === "Backspace" && !finished) {
+        event.preventDefault();
+        removeLast();
+      } else if (event.key === "Enter" && !finished && digits.every(Boolean)) {
+        event.preventDefault();
+        submitGuess();
+      }
+    });
+    render();
+  </script>
+</body>
+</html>
